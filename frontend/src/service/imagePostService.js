@@ -59,3 +59,10 @@ export const getMyImagePosts = () =>
     .get('/image-post/my-posts')
     .then((res) => res.data.posts ?? [])
 
+//  fetch a single post by ID
+export const getImagePostById = (id) =>
+  api
+    .get(`/image-post/${id}`)
+    .then((res) => res.data.post)
+
+

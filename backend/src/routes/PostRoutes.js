@@ -1,6 +1,6 @@
 import express from 'express'
 import authenticate from '../middleware/authMiddleware.js';
-import { createImagePost, createImagePostUploadUrl, getMyImagePostsController } from '../controller/PostImageController.js';
+import { createImagePost, createImagePostUploadUrl, getMyImagePostsController, getImagePostByIdController } from '../controller/PostImageController.js';
 
 
 
@@ -17,6 +17,7 @@ postImageRoute.post(
   authenticate,
   createImagePost
 );
-postImageRoute.get('/my-posts', authenticate, getMyImagePostsController)
+postImageRoute.get('/my-posts', authenticate, getMyImagePostsController);
+postImageRoute.get('/:id', authenticate, getImagePostByIdController);
 
 export default postImageRoute;

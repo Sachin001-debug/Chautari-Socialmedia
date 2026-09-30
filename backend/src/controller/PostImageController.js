@@ -4,6 +4,7 @@ import {
   signImagePostUpload,
   imagePostServices,
   getImagePostsByUserIdServices,
+  getImagePostByIdServices,
 } from "../services/PostImageServices.js";
 
 export const createImagePostUploadUrl = async (req, res, next) => {
@@ -70,6 +71,24 @@ export const getMyImagePostsController= async (req, res, next) => {
 
     return res.status(200).json({
       posts,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+//to get single image post by ID
+export const getImagePostByIdController = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const post = await getImagePostByIdServices({ id });
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    return res.status(200).json({
+      post,
     });
   } catch (err) {
     next(err);

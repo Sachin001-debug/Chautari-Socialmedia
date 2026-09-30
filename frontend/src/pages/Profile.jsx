@@ -351,11 +351,12 @@ const Profile = () => {
         ) : (
           <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
             {posts.map((post) => (
-              <a
+              <button
+                type="button"
                 key={post.id}
                 title={post.caption || 'View post'}
-                onClick={()=>navigate(`/image-post/${post.id}`)}
-                className="group relative block aspect-square overflow-hidden rounded-lg bg-stone-100"
+                onClick={() => navigate(`/image-post/${post.id}`)}
+                className="group relative block aspect-square overflow-hidden rounded-lg bg-stone-100 cursor-pointer text-left w-full"
               >
                 <img
                   src={post.image_url}
@@ -369,7 +370,7 @@ const Profile = () => {
                     {post.caption}
                   </span>
                 )}
-              </a>
+              </button>
             ))}
           </div>
         )}

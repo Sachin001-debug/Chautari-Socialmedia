@@ -142,3 +142,35 @@ export const getImagePostsByUserIdServices = async ({ userId }) => {
     image_url: publicImagePostUrlForObjectPath(row.image_url),
   }))
 }
+
+// to fetch a single image post by ID with user details
+export const getImagePostByIdServices = async ({ id }) => {
+  const query = `
+    SELECT
+      p.id,
+      p.user_id,
+      p.caption,
+      p.hashtags,
+      p.image_url,
+      p.created_at,
+      u.username,
+      u.profile_pic_url
+    FROM image_posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.id = $1
+  `
+
+  const { rows } = await pool.query(query, [id])
+  if (rows.length === 0) return null
+
+  const row = rows[0]
+  return {
+    ...row,
+    image_url: publicImagePostUrlForObjectPath(row.image_url),
+    user: {
+      id: row.user_id,
+      username: row.username,
+      profile_pic_url: row.profile_pic_url,
+    },
+  }
+}

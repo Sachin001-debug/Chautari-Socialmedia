@@ -42,7 +42,6 @@ const extractApiMessage = (error) => {
 // Three steps, because the bytes go straight from the browser to Storage:
 // ask for a signed upload URL, PUT the file at it, then tell the server to save
 // the path it issued. The file never passes through the API server.
-//
 // The signed URL is the only access control here. Our users live in Postgres
 // with a custom JWT, not Supabase Auth, so storage RLS cannot scope anything to
 // them,the server mints a short-lived URL scoped to this user's folder instead.

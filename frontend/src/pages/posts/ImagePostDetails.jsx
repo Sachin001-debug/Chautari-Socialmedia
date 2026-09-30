@@ -10,7 +10,22 @@ import {
   Bookmark,
 } from 'lucide-react'
 import { extractApiMessage } from '../../service/uploadService'
-import { getImagePostById } from '../../service/imagePostService'
+import {
+  getImagePostById,
+  likePost,
+  unlikePost,
+} from '../../service/imagePostService'
+import CommentSection from './CommentSection'
+
+/* TEMPORARY: replace with however your app stores the logged-in user
+   (auth context, Redux, etc). It must return { username, profile_pic_url }. */
+const getCurrentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
+}
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -56,16 +71,19 @@ const Alert = ({ children }) => (
 const ActionButton = ({
   icon: Icon,
   label,
+  count,
   active = false,
   activeClass = '',
   onClick,
+  disabled = false,
 }) => (
   <button
     type="button"
     onClick={onClick}
+    disabled={disabled}
     aria-pressed={active}
     aria-label={label}
-    className={`group flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer active:scale-[0.97] ${
+    className={`group flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer active:scale-[0.97] disabled:opacity-70 ${
       active
         ? activeClass
         : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100'
@@ -78,6 +96,7 @@ const ActionButton = ({
       strokeWidth={active ? 2.2 : 1.9}
     />
     <span className="hidden sm:inline">{label}</span>
+    {count !== undefined && <span className="tabular-nums">{count}</span>}
   </button>
 )
 
@@ -89,9 +108,19 @@ const ImagePostDetails = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  /* purely visual toggles */
+  /* like state (saved on the server) */
   const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
+  const [likePending, setLikePending] = useState(false)
+
+  /* comment state */
+  const [commentsOpen, setCommentsOpen] = useState(false)
+  const [commentCount, setCommentCount] = useState(0)
+
+  /* purely visual toggle */
   const [saved, setSaved] = useState(false)
+
+  const currentUser = getCurrentUser()
 
   useEffect(() => {
     let active = true
@@ -110,6 +139,9 @@ const ImagePostDetails = () => {
           return
         }
         setPost(data)
+        setLiked(Boolean(data.liked_by_me))
+        setLikeCount(data.like_count ?? 0)
+        setCommentCount(data.comment_count ?? 0)
       } catch (err) {
         if (!active) return
         setError(
@@ -126,6 +158,27 @@ const ImagePostDetails = () => {
       active = false
     }
   }, [id])
+
+  const handleLike = async () => {
+    if (likePending) return
+
+    const next = !liked
+
+    setLiked(next)
+    setLikeCount((c) => c + (next ? 1 : -1))
+    setLikePending(true)
+
+    try {
+      const res = next ? await likePost(id) : await unlikePost(id)
+      setLiked(res.liked)
+      setLikeCount(res.like_count)
+    } catch (err) {
+      setLiked(!next)
+      setLikeCount((c) => c + (next ? -1 : 1))
+    } finally {
+      setLikePending(false)
+    }
+  }
 
   /* loading */
 
@@ -199,7 +252,6 @@ const ImagePostDetails = () => {
             </div>
           </div>
 
-          {/* quick favorite toggle in the header */}
           <button
             type="button"
             onClick={() => setSaved((s) => !s)}
@@ -218,7 +270,7 @@ const ImagePostDetails = () => {
           </button>
         </header>
 
-      {/* caption */}
+        {/* caption */}
         <div className="px-4 sm:px-5 py-4 sm:py-5">
           {caption ? (
             <p className="text-sm leading-relaxed text-stone-700 whitespace-pre-wrap break-words">
@@ -234,6 +286,7 @@ const ImagePostDetails = () => {
             </p>
           )}
         </div>
+
         {/* image */}
         <div className="relative bg-stone-950 flex items-center justify-center">
           <img
@@ -241,7 +294,6 @@ const ImagePostDetails = () => {
             alt={caption || 'Post image'}
             className="w-full max-h-[70vh] object-contain"
           />
-          {/* soft bottom fade so the action bar feels connected */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
         </div>
 
@@ -250,11 +302,20 @@ const ImagePostDetails = () => {
           <ActionButton
             icon={Heart}
             label="Like"
+            count={likeCount}
             active={liked}
             activeClass="text-rose-600 bg-rose-50"
-            onClick={() => setLiked((v) => !v)}
+            onClick={handleLike}
+            disabled={likePending}
           />
-          <ActionButton icon={MessageCircle} label="Comment" />
+          <ActionButton
+            icon={MessageCircle}
+            label="Comment"
+            count={commentCount}
+            active={commentsOpen}
+            activeClass="text-emerald-700 bg-emerald-50"
+            onClick={() => setCommentsOpen((v) => !v)}
+          />
           <ActionButton
             icon={Bookmark}
             label="Favorite"
@@ -264,7 +325,14 @@ const ImagePostDetails = () => {
           />
         </div>
 
-      
+        {/* comment section: opens right below the action bar */}
+        {commentsOpen && (
+          <CommentSection
+            postId={id}
+            currentUser={currentUser}
+            onCommentAdded={() => setCommentCount((c) => c + 1)}
+          />
+        )}
       </article>
 
       {/* link back to the author's profile if we know who they are */}
@@ -293,4 +361,4 @@ const BackButton = ({ onClick }) => (
   </button>
 )
 
-export default ImagePostDetails;
+export default ImagePostDetails

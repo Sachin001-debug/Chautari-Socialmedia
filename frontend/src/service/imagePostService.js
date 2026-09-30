@@ -65,4 +65,20 @@ export const getImagePostById = (id) =>
     .get(`/image-post/${id}`)
     .then((res) => res.data.post)
 
+// like / unlike
+export const likePost = async (id) => {
+  const { data } = await api.post(`/image-post/${id}/like`)
+  return data // { liked: true, like_count }
+}
 
+export const unlikePost = async (id) => {
+  const { data } = await api.delete(`/image-post/${id}/like`)
+  return data // { liked: false, like_count }
+}
+
+// comments
+export const getComments = (id) =>
+  api.get(`/image-post/${id}/comments`).then((res) => res.data.comments ?? [])
+
+export const addComment = (id, text) =>
+  api.post(`/image-post/${id}/comments`, { text }).then((res) => res.data.comment)
